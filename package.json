@@ -8,12 +8,9 @@
     "test": "vitest run",
     "cf-types": "wrangler types",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:testnet": "wrangler deploy --config wrangler.jsonc",
-    "deploy:mainnet": "wrangler deploy --config wrangler.mainnet.jsonc",
+    "deploy": "wrangler deploy --config wrangler.jsonc",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "db:migrate:mainnet": "wrangler d1 migrations apply DB --remote --config wrangler.mainnet.jsonc"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc"
   },
   "dependencies": {
     "viem": "^2.37.0"

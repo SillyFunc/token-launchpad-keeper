@@ -1,6 +1,6 @@
 import { decodeFunctionData } from "viem";
 import { describe, expect, it } from "vitest";
-import { legacyVaultAbi, taxProcessorAbi, vaultAbi } from "../src/abis";
+import { taxProcessorAbi, vaultAbi } from "../src/abis";
 import { buildExecutionPlan } from "../src/planner";
 import { amountAfterTransferTax, getAmountOut } from "../src/policy";
 import { BuybackReadiness } from "../src/types";
@@ -98,8 +98,7 @@ function snapshot(overrides: Partial<AssetSnapshot> = {}): AssetSnapshot {
     lpTokenBalance: 0n,
     lpQuoteBalance: 0n,
     pairTotalSupply: 10_000n,
-    vaultVersion: 2,
-    vaultExecutableAmount: 1_000n,
+      vaultExecutableAmount: 1_000n,
     vaultReadiness: BuybackReadiness.Ready,
     vaultMode: 0,
     ...overrides,
@@ -394,19 +393,5 @@ describe("execution planning", () => {
         10_000,
       ),
     ).resolves.toBeNull();
-  });
-
-  it("keeps the legacy three-argument execution ABI for an old ready vault", async () => {
-    const plan = await buildExecutionPlan(
-      database(anchors()),
-      config,
-      snapshot({ vaultVersion: 1 }),
-      "buyback",
-      10_000,
-    );
-
-    const decoded = decodeFunctionData({ abi: legacyVaultAbi, data: plan!.data });
-    expect(decoded.functionName).toBe("executeBuyback");
-    expect(decoded.args).toHaveLength(3);
   });
 });

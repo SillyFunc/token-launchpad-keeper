@@ -13,7 +13,6 @@ function environment(overrides: Partial<Env> = {}): Env {
     COORDINATOR_ADDRESS: coordinator,
     KEEPER_ADDRESS: keeper,
     KEEPER_PRIVATE_KEY: "unused",
-    ADMIN_TOKEN: "unused",
     ...overrides,
   } as Env;
 }

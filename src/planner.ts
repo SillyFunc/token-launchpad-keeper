@@ -1,5 +1,5 @@
 import { encodeFunctionData, getAddress, zeroAddress, type Address } from "viem";
-import { legacyVaultAbi, pairAbi, taxProcessorAbi, tokenAbi, vaultAbi } from "./abis";
+import { pairAbi, taxProcessorAbi, tokenAbi, vaultAbi } from "./abis";
 import { loadAnchorSamples, storeSample } from "./db";
 import {
   activeTaxRate,
@@ -85,60 +85,25 @@ export async function inspectAsset(config: KeeperConfig, asset: AssetRow): Promi
   };
   const pool = values[3] as PoolStateResult;
   const feeConfig = values[5] as FeeConfigResult;
-  let vaultVersion: 0 | 1 | 2 = 0;
   let vaultExecutableAmount = 0n;
   let vaultReadiness = BuybackReadiness.InsufficientBalance;
   let vaultMode = 0;
   if (asset.vault) {
-    try {
-      const vaultValues = await batchContractCalls(
-        config.readRpcUrl,
-        [
-          { address: asset.vault, abi: vaultAbi, functionName: "previewBuyback" },
-          { address: asset.vault, abi: vaultAbi, functionName: "mode" },
-        ],
-        block.tag,
-      );
-      const preview = vaultValues[0] as VaultPreviewResult;
-      vaultVersion = 2;
-      vaultExecutableAmount = preview[0];
-      vaultReadiness = numberValue(preview[1]) as BuybackReadiness;
-      if (vaultReadiness > BuybackReadiness.ReserveCapBelowMinimum) {
-        throw new Error(`Vault ${asset.vault} returned invalid readiness ${vaultReadiness}`);
-      }
-      vaultMode = numberValue(vaultValues[1] as number | bigint);
-    } catch (previewError) {
-      try {
-        const legacyValues = await batchContractCalls(
-          config.readRpcUrl,
-          [
-            { address: asset.vault, abi: legacyVaultAbi, functionName: "canExecuteBuyback" },
-            { address: asset.vault, abi: legacyVaultAbi, functionName: "buybackAmount" },
-            { address: asset.vault, abi: legacyVaultAbi, functionName: "mode" },
-          ],
-          block.tag,
-        );
-        const canExecute = legacyValues[0] as boolean;
-        const fixedAmount = legacyValues[1] as bigint;
-        vaultVersion = 1;
-        vaultExecutableAmount = canExecute ? fixedAmount : 0n;
-        vaultMode = numberValue(legacyValues[2] as number | bigint);
-        if (canExecute) {
-          vaultReadiness = BuybackReadiness.Ready;
-        } else if (sample.reserveToken === 0n || sample.reserveWbnb === 0n) {
-          vaultReadiness = BuybackReadiness.InvalidPoolReserves;
-        } else if (fixedAmount > (sample.reserveWbnb * BUYBACK_MAX_RESERVE_BPS) / BPS) {
-          vaultReadiness = BuybackReadiness.LegacyFixedAmountExceedsReserveCap;
-        } else {
-          // 旧 ABI 无法区分余额/时间/触发金额；三者都是无需告警的正常等待。
-          vaultReadiness = BuybackReadiness.TooEarly;
-        }
-      } catch (legacyError) {
-        throw new Error(
-          `Vault ${asset.vault} supports neither current nor legacy ABI: preview=${String(previewError)}; legacy=${String(legacyError)}`,
-        );
-      }
+    const vaultValues = await batchContractCalls(
+      config.readRpcUrl,
+      [
+        { address: asset.vault, abi: vaultAbi, functionName: "previewBuyback" },
+        { address: asset.vault, abi: vaultAbi, functionName: "mode" },
+      ],
+      block.tag,
+    );
+    const preview = vaultValues[0] as VaultPreviewResult;
+    vaultExecutableAmount = preview[0];
+    vaultReadiness = numberValue(preview[1]) as BuybackReadiness;
+    if (vaultReadiness > BuybackReadiness.ReserveCapBelowMinimum) {
+      throw new Error(`Vault ${asset.vault} returned invalid readiness ${vaultReadiness}`);
     }
+    vaultMode = numberValue(vaultValues[1] as number | bigint);
   }
   return {
     asset,
@@ -163,7 +128,6 @@ export async function inspectAsset(config: KeeperConfig, asset: AssetRow): Promi
     lpTokenBalance: values[6] as bigint,
     lpQuoteBalance: values[7] as bigint,
     pairTotalSupply: values[8] as bigint,
-    vaultVersion,
     vaultExecutableAmount,
     vaultReadiness,
     vaultMode,
@@ -398,14 +362,10 @@ export async function buildExecutionPlan(
       secondaryMinimumOut = protectedLpOut.minimumOut;
     }
     target = getAddress(snapshot.asset.vault);
-    const executeAbi = snapshot.vaultVersion === 1 ? legacyVaultAbi : vaultAbi;
     data = encodeFunctionData({
-      abi: executeAbi,
+      abi: vaultAbi,
       functionName: "executeBuyback",
-      args:
-        snapshot.vaultVersion === 1
-          ? [minimumOut, snapshot.vaultMode === 1 ? secondaryMinimumOut : 0n, deadline]
-          : [amountIn, minimumOut, snapshot.vaultMode === 1 ? secondaryMinimumOut : 0n, deadline],
+      args: [amountIn, minimumOut, snapshot.vaultMode === 1 ? secondaryMinimumOut : 0n, deadline],
     });
   }
 

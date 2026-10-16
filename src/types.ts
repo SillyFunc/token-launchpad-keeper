@@ -17,7 +17,6 @@ export interface Env {
   COORDINATOR_ADDRESS: string;
   KEEPER_ADDRESS: string;
   KEEPER_PRIVATE_KEY: string;
-  ADMIN_TOKEN: string;
 
   DISCOVERY_PAGE_SIZE?: string;
   MAX_ASSETS_PER_RUN?: string;
@@ -107,7 +106,6 @@ export enum BuybackReadiness {
   TooEarly = 3,
   InvalidPoolReserves = 4,
   ReserveCapBelowMinimum = 5,
-  LegacyFixedAmountExceedsReserveCap = 6,
 }
 
 export interface AssetSnapshot {
@@ -128,7 +126,6 @@ export interface AssetSnapshot {
   lpTokenBalance: bigint;
   lpQuoteBalance: bigint;
   pairTotalSupply: bigint;
-  vaultVersion: 0 | 1 | 2;
   vaultExecutableAmount: bigint;
   vaultReadiness: BuybackReadiness;
   vaultMode: number;

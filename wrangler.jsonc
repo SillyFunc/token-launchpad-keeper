@@ -1,19 +1,18 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "sillyfunc-launchpad-keeper-testnet",
+  "name": "token-launchpad-keeper-mainnet",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-19",
   "compatibility_flags": ["nodejs_compat"],
   "triggers": {
-    // "crons": ["* * * * *"]
-    "crons": []
+    "crons": ["* * * * *"]
   },
   "vars": {
-    "CHAIN_ID": "97",
-    "READ_RPC_URL": "https://bsc-testnet-rpc.publicnode.com",
-    "SEND_RPC_URL": "https://bsc-testnet-rpc.publicnode.com",
-    "COORDINATOR_ADDRESS": "0x63e325d9782DD42915a41673dA2Cc29F8e9B8424",
-    "KEEPER_ADDRESS": "0x06778BaaD7504443b1b1d8f2BFAa74d72d1D6de8",
+    "CHAIN_ID": "56",
+    "READ_RPC_URL": "https://bsc-rpc.publicnode.com",
+    "SEND_RPC_URL": "https://bsc-rpc.publicnode.com",
+    "COORDINATOR_ADDRESS": "0x0000000000000000000000000000000000000000",
+    "KEEPER_ADDRESS": "0x0000000000000000000000000000000000000000",
     "DISCOVERY_PAGE_SIZE": "8",
     "MAX_ASSETS_PER_RUN": "8",
     "CHECK_INTERVAL_SECONDS": "60",
@@ -26,8 +25,8 @@
     "MIN_ANCHOR_SAMPLES": "3",
     "DEADLINE_SECONDS": "300",
     "GAS_PRICE_MULTIPLIER_BPS": "12000",
-    "MAX_GAS_PRICE_WEI": "10000000000",
-    "MIN_KEEPER_BALANCE_WEI": "3000000000000000",
+    "MAX_GAS_PRICE_WEI": "3000000000",
+    "MIN_KEEPER_BALANCE_WEI": "10000000000000000",
     "MAX_GAS_COST_BPS": "1000",
     "TAX_EXECUTION_INTERVAL_SECONDS": "900",
     "LIQUIDITY_EXECUTION_INTERVAL_SECONDS": "900",
@@ -39,8 +38,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "sillyfunc-launchpad-keeper-testnet",
-      "database_id": "cb08b9f9-7090-4d9e-83e4-b288e08a87e2",
+      "database_name": "token-launchpad-keeper-mainnet",
+      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }
   ],
@@ -60,7 +59,7 @@
   ],
   "workflows": [
     {
-      "name": "sillyfunc-launchpad-keeper-testnet",
+      "name": "token-launchpad-keeper-mainnet",
       "binding": "KEEPER_WORKFLOW",
       "class_name": "KeeperWorkflow"
     }

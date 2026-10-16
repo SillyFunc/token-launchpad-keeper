@@ -9,7 +9,7 @@ const PROCESSOR = "0x4444444444444444444444444444444444444444";
 const VAULT = "0x5555555555555555555555555555555555555555";
 
 const mock = vi.hoisted(() => ({
-  vaultVersion: 2,
+  vaultFails: false,
   batch: vi.fn(),
 }));
 
@@ -51,11 +51,11 @@ function baseValues() {
 describe("vault ABI inspection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mock.vaultVersion = 2;
+    mock.vaultFails = false;
     mock.batch.mockImplementation(async (_url: string, calls: { functionName: string }[]) => {
       if (calls[0]?.functionName === "token0") return baseValues();
       if (calls[0]?.functionName === "previewBuyback") {
-        if (mock.vaultVersion === 1) throw new Error("function selector not recognized");
+        if (mock.vaultFails) throw new Error("execution reverted");
         return [[500n, BuybackReadiness.Ready], 0];
       }
       return [false, 1_000n, 0];
@@ -64,16 +64,12 @@ describe("vault ABI inspection", () => {
 
   it("reads the dynamic executable amount from a current vault", async () => {
     const result = await inspectAsset(config, asset);
-    expect(result.vaultVersion).toBe(2);
     expect(result.vaultExecutableAmount).toBe(500n);
     expect(result.vaultReadiness).toBe(BuybackReadiness.Ready);
   });
 
-  it("falls back to the old ABI and identifies the fixed-amount reserve deadlock", async () => {
-    mock.vaultVersion = 1;
-    const result = await inspectAsset(config, asset);
-    expect(result.vaultVersion).toBe(1);
-    expect(result.vaultExecutableAmount).toBe(0n);
-    expect(result.vaultReadiness).toBe(BuybackReadiness.LegacyFixedAmountExceedsReserveCap);
+  it("surfaces vault read failures instead of guessing readiness", async () => {
+    mock.vaultFails = true;
+    await expect(inspectAsset(config, asset)).rejects.toThrow("execution reverted");
   });
 });

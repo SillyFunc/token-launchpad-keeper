@@ -283,8 +283,7 @@ export async function recordBuybackReadiness(
 
   const liquidityBlocked =
     readiness === BuybackReadiness.InvalidPoolReserves ||
-    readiness === BuybackReadiness.ReserveCapBelowMinimum ||
-    readiness === BuybackReadiness.LegacyFixedAmountExceedsReserveCap;
+    readiness === BuybackReadiness.ReserveCapBelowMinimum;
   if (!liquidityBlocked) {
     await setSetting(db, streakKey, "0", now);
     await resolveAlert(db, alertCode, now);
