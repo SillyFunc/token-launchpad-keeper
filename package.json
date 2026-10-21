@@ -10,7 +10,9 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy --config wrangler.jsonc",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc"
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc",
+    "deploy:test": "wrangler deploy --config wrangler.jsonc --env test",
+    "db:migrate:remote:test": "wrangler d1 migrations apply DB --remote --config wrangler.jsonc --env test"
   },
   "dependencies": {
     "viem": "^2.37.0"

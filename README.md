@@ -57,4 +57,6 @@ pnpm test
 - D1:资产注册表、历史储备、运行记录、交易和告警。
 - SQLite Durable Object:单钱包 nonce 串行化和幂等签名广播。
 
-`wrangler.jsonc` 是唯一的 Wrangler 配置文件。其中的 D1 `database_id`、`COORDINATOR_ADDRESS`、`KEEPER_ADDRESS` 目前仍为占位值,创建 D1 并确认地址后必须替换再部署,然后用 Cloudflare Secrets 录入私钥。测试网运行时直接修改该文件的 `CHAIN_ID`、RPC、合约地址、D1 与 Worker 名称;测试网与主网的数据库及私钥必须相互隔离,不得复用。
+`wrangler.jsonc` 是唯一的 Wrangler 配置文件。其中的 `COORDINATOR_ADDRESS`、`KEEPER_ADDRESS` 目前仍为占位值,确认地址后必须替换再部署,然后用 Cloudflare Secrets 录入私钥。D1 不写 `database_id`:首次 `wrangler deploy` 按 `database_name` 自动连接同名数据库,不存在则自动创建;随后立即执行远程迁移建表。测试网运行时直接修改该文件的 `CHAIN_ID`、RPC、合约地址、D1 与 Worker 名称;测试网与主网的数据库及私钥必须相互隔离,不得复用。
+
+主网上线前验收使用同一文件中的 `env.test`(独立 Worker、D1 与 Workflow 名称,放宽单批门槛并收紧 Gas 预算):`pnpm deploy:test`(自动创建 D1)后立即 `pnpm db:migrate:remote:test`,私钥用 `wrangler secret put KEEPER_PRIVATE_KEY --env test` 录入。它与正式 Worker 共用 Keeper 私钥时不得同时运行。验收流程见主仓库 [`docs/mainnet-keeper-test.md`](https://github.com/SillyFunc/token-launchpad-contracts/blob/main/docs/mainnet-keeper-test.md)。

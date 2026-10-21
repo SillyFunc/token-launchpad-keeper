@@ -9,8 +9,10 @@
   },
   "vars": {
     "CHAIN_ID": "56",
-    "READ_RPC_URL": "https://bsc-rpc.publicnode.com",
-    "SEND_RPC_URL": "https://bsc-rpc.publicnode.com",
+    // publicnode 已要求 token 才能查询交易回执，读节点改用 BNB Chain 官方节点
+    "READ_RPC_URL": "https://bsc-dataseed.bnbchain.org",
+    // 48 Club 私有交易通道（MEV 保护）；主网要求与 READ_RPC_URL 不同
+    "SEND_RPC_URL": "https://rpc-bsc.48.club",
     "COORDINATOR_ADDRESS": "0x0000000000000000000000000000000000000000",
     "KEEPER_ADDRESS": "0x0000000000000000000000000000000000000000",
     "DISCOVERY_PAGE_SIZE": "8",
@@ -35,11 +37,12 @@
     "MAX_TOTAL_GAS_PER_WINDOW_WEI": "10000000000000000",
     "PENDING_RETRY_SECONDS": "90"
   },
+  // 正式库首次 `wrangler deploy` 时按名称自动创建。wrangler 会把自动创建的 database_id 写回本文件的顶层配置，
+  // 部署后须核对此处仍指向正式库，不得出现 `-test` 名称或验收库的 database_id。
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "token-launchpad-keeper-mainnet",
-      "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
     }
   ],
@@ -67,5 +70,71 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
+  },
+  // 主网上线前验收环境：`wrangler deploy --env test`。vars、D1、Durable Object 与 Workflow
+  // 绑定不会从顶层继承，必须在此完整声明；D1 与 Worker 名称独立，避免与正式环境共用状态。
+  // 与正式 Worker 共用同一 Keeper 私钥时不得同时运行（nonce 冲突）。流程见主仓库 docs/mainnet-keeper-test.md。
+  "env": {
+    "test": {
+      "name": "token-launchpad-keeper-mainnet-test",
+      "vars": {
+        "CHAIN_ID": "56",
+        "READ_RPC_URL": "https://bsc-dataseed.bnbchain.org",
+        // 48 Club 私有交易通道（MEV 保护）；主网要求与 READ_RPC_URL 不同
+        "SEND_RPC_URL": "https://rpc-bsc.48.club",
+        // 主网验收部署（broadcast/Deploy.s.sol/56，已链上核验）
+        "COORDINATOR_ADDRESS": "0xf5723650A64a7b3F05D1544d540E77C57EcDD94D",
+        "KEEPER_ADDRESS": "0x143f2dE527A0054100A3b8b47E02add8a8c87547",
+        "DISCOVERY_PAGE_SIZE": "8",
+        "MAX_ASSETS_PER_RUN": "8",
+        "CHECK_INTERVAL_SECONDS": "60",
+        "AMM_FEE_BPS": "25",
+        // 浅池验收：单批最多卖出池中 1% 代币，避免批次被 0.3% 上限压得过小
+        "TAX_MAX_RESERVE_BPS": "100",
+        "SLIPPAGE_BPS": "100",
+        "MAX_PRICE_DEVIATION_BPS": "300",
+        "ANCHOR_MIN_AGE_SECONDS": "300",
+        "ANCHOR_MAX_AGE_SECONDS": "3600",
+        "MIN_ANCHOR_SAMPLES": "3",
+        "DEADLINE_SECONDS": "300",
+        // BSC Gas 价格平稳，按建议价出价即可
+        "GAS_PRICE_MULTIPLIER_BPS": "10000",
+        "MAX_GAS_PRICE_WEI": "3000000000",
+        "MIN_KEEPER_BALANCE_WEI": "3000000000000000",
+        // 验收追求路径覆盖而非效率：只拒绝 Gas 高于处理价值的批次，总花费由下方预算与 D1 暂停开关控制
+        "MAX_GAS_COST_BPS": "10000",
+        "TAX_EXECUTION_INTERVAL_SECONDS": "120",
+        "LIQUIDITY_EXECUTION_INTERVAL_SECONDS": "120",
+        "GAS_BUDGET_WINDOW_SECONDS": "3600",
+        // 验收预算硬上限：单币 0.001 BNB/小时，全局 0.003 BNB/小时
+        "MAX_TOKEN_GAS_PER_WINDOW_WEI": "1000000000000000",
+        "MAX_TOTAL_GAS_PER_WINDOW_WEI": "3000000000000000",
+        "PENDING_RETRY_SECONDS": "90"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "token-launchpad-keeper-mainnet-test",
+          // 首次部署自动创建的验收库；显式写入，避免 wrangler 再把 ID 写回顶层配置
+          "database_id": "1d9ad5bc-7598-4647-9e46-1611ea4a2207",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "SIGNER",
+            "class_name": "SignerDurableObject"
+          }
+        ]
+      },
+      "workflows": [
+        {
+          "name": "token-launchpad-keeper-mainnet-test",
+          "binding": "KEEPER_WORKFLOW",
+          "class_name": "KeeperWorkflow"
+        }
+      ]
+    }
   }
 }
